@@ -13,5 +13,22 @@ public class AttachHooker implements XposedInterface.Hooker {
     @AfterInvocation
     public static void afterHookedMethod(XposedInterface.AfterHookCallback callback) {
         XposedInit.loadModules((ActivityThread) callback.getThisObject());
+        // Install vendor reflection guards (best-effort, Android 15+ only)
+        try {
+            VendorHiddenApiWorkaroundHooker.installForCurrentProcess();
+        } catch (Throwable ignored) {
+        }
+        try {
+            HiddenApiInvokeNoopHooker.installForCurrentProcess(de.robv.android.xposed.XposedInit.startsSystemServer);
+        } catch (Throwable ignored) {
+        }
+        try {
+            HiddenApiLookupShortCircuitHooker.installForCurrentProcess(de.robv.android.xposed.XposedInit.startsSystemServer);
+        } catch (Throwable ignored) {
+        }
+        try {
+            OplusGcNoiseMitigator.installForCurrentProcess();
+        } catch (Throwable ignored) {
+        }
     }
 }

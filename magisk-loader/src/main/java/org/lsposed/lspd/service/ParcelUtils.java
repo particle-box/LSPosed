@@ -35,25 +35,32 @@ public class ParcelUtils {
     }
 
     private static Method obtainMethod;
+    private static boolean obtainMethodResolved;
 
     @SuppressLint("SoonBlockedPrivateApi")
     public static Parcel fromNativePointer(long ptr) {
         if (ptr == 0) return null;
 
-        if (obtainMethod == null) {
+        if (!obtainMethodResolved) {
             try {
                 //noinspection JavaReflectionMemberAccess
                 obtainMethod = Parcel.class.getDeclaredMethod("obtain", long.class);
                 obtainMethod.setAccessible(true);
-            } catch (Throwable e) {
-                throw new RuntimeException(e);
+            } catch (Throwable ignored) {
+                // Hidden API blocked or not present on this build
+                obtainMethod = null;
+            } finally {
+                obtainMethodResolved = true;
             }
         }
 
+        if (obtainMethod == null) return null;
+
         try {
             return (Parcel) obtainMethod.invoke(null, ptr);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
+        } catch (Throwable ignored) {
+            // Fallback: not available or invocation denied
+            return null;
         }
     }
 }

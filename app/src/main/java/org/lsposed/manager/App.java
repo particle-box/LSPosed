@@ -88,8 +88,16 @@ public class App extends Application {
     }
 
     static {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            HiddenApiBypass.addHiddenApiExemptions("");
+        // Avoid noisy/denied hidden-API exemption attempts on newer OEM builds
+        // Android 15+ (and some OPlus/OnePlus variants) harden hidden-API checks
+        // which causes reflective calls to be denied and spam logs. Only attempt
+        // exemptions on SDK <= 34, and always guard with try/catch.
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && Build.VERSION.SDK_INT <= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                HiddenApiBypass.addHiddenApiExemptions("");
+            }
+        } catch (Throwable ignored) {
+            // Silently skip if the platform rejects exemptions
         }
         Looper.myQueue().addIdleHandler(() -> {
             if (App.getInstance() == null || App.getExecutorService() == null) return true;
